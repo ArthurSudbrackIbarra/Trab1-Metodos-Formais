@@ -60,14 +60,6 @@ class {:autocontracts} CircularArray {
     ensures elementsCount == old(elementsCount) + 1
   {
     /*
-      If the next index is equal to the length of the array, then we need to
-      reset it to 0.
-    */
-    if (nextIndex == arr.Length)
-    {
-      nextIndex := 0;
-    }
-    /*
       If the array is full, then we need to create a new array with double
       the capacity of the current array.
     */
@@ -87,6 +79,14 @@ class {:autocontracts} CircularArray {
       nextIndex := arr.Length;
       startIndex := 0;
       arr := newArr;
+    }
+    /*
+      If the next index is equal to the length of the array, then we need to
+      reset it to 0.
+    */
+    if (nextIndex == arr.Length)
+    {
+      nextIndex := 0;
     }
     /*
       Add the element to the array.
