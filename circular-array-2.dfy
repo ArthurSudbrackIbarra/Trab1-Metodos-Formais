@@ -25,7 +25,7 @@ class {:autocontracts} CircularArray {
     0 <= currentIndex < a.Length &&
     0 <= count <= a.Length &&
     count == |Elements| &&
-    forall i :: 0 <= i < count ==> Elements[i] == a[(startIndex + i) % a.Length] &&
+    forall i :: 0 <= i < count ==> Elements[i] == a[(startIndex + i) % a.Length]
   }
 
   /*
@@ -94,7 +94,7 @@ class {:autocontracts} CircularArray {
   //   if (currentIndex >= a.Length) {
   //     currentIndex := 0;
   //   }
-    
+
   //   /*
   //     Update the abstraction.
   //   */
@@ -104,23 +104,79 @@ class {:autocontracts} CircularArray {
   /*
     Contains method.
   */
-  method Contains(element: int) returns (r: bool)
-    requires Valid()
-    ensures Valid()
-    ensures r == (element in Elements)
+  method Contains(key: int) returns (index: int)
+    ensures 0 <= index ==> index < a.Length && a[index] == key
+    ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key
   {
-    r := false;
-    var i := 0;
-    while (i < count)
-      decreases count - i
-      invariant 0 <= i <= count
-      invariant r == (element in Elements[0..i])
+    index := 0;
+    while index < a.Length
+      invariant 0 <= index < a.Length
+      invariant forall k :: 0 <= k < index ==> a[k] != key
     {
-      if (a[(i + startIndex) % a.Length] == element) {
-        r := true;
+      if a[index] == key { return; }
+      if index + 1 >= a.Length {
+        index := -1;
+        return;
       }
-      i := i + 1;
+      index := index + 1;
     }
+    index := -1;
+  }
+
+  // method ContainsValid(key: int) returns (index: int)
+  //   ensures Valid()
+  //   ensures 0 <= index ==> index < a.Length && a[index] == key &&  forall i :: 0 <= i < count ==> Elements[i] == key
+  //   ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key && forall i :: 0 <= i < count ==> Elements[i] != key
+  // {
+  //   index := 0;
+  //   while index < a.Length 
+  //     invariant 0 <= index < a.Length
+  //     invariant forall k :: 0 <= k < index ==> a[k] != key
+  //     {
+  //     if a[index] == key { return; }
+  //     if index + 1 >= a.Length {
+  //       index := -1;
+  //       return;
+  //     }
+  //     index := index + 1;
+  //   }
+  //   index := -1;
+  // }
+
+  // method Contains(element: int) returns (r: bool)
+  //   requires Valid()
+  //   ensures Valid()
+  //   ensures r == (element in Elements)
+  // {
+  //   r := false;
+  //   var i := 0;
+  //   while (i < count)
+  //     decreases count - i
+  //     invariant 0 <= i <= count
+  //     invariant r == (element in Elements[0..i])
+  //   {
+  //     if (a[(i + startIndex) % a.Length] == element) {
+  //       r := true;
+  //     }
+  //     i := i + 1;
+  //   }
+  // }
+
+  function min(x: int, y: int): int
+    ensures min(x,y) <= x
+    ensures min(x,y) <= y
+    ensures min(x,y) == x || min(x,y) == y
+  {
+    if (x < y) then x
+    else y
+  }
+
+  function max(x: int, y: int): int
+    ensures max(x,y) >= x
+    ensures max(x,y) >= y
+  {
+    if (x > y) then x
+    else y
   }
 
   /*
