@@ -41,11 +41,26 @@ class {:autocontracts} CircularArray {
   }
 
   /*
+    Dequeue method.
+  */
+  method Dequeue() returns (e: int)
+    requires Valid()
+    requires size > 0
+    requires |Elements| > 0
+    ensures Valid()
+    ensures Elements == old(Elements)[1..]
+    ensures e == old(Elements)[0]
+  {
+    e := arr[start];
+    start := (start + 1) % arr.Length;
+    size := size - 1;
+    Elements := Elements[1..];
+  }
+
+  /*
     Contains method.
   */
   function Contains(e: int): bool
-    requires Valid()
-    ensures Valid()
     ensures Contains(e) == (e in Elements)
   {
     e in (arr[..] + arr[..])[start..start + size]
