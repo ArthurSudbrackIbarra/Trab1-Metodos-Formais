@@ -101,9 +101,63 @@ class {:autocontracts} CircularArray {
   //   Elements := Elements + [element];
   // }
 
+  // method Enqueue(element: int)
+  //   requires Valid()
+  //   ensures Valid()
+  //   ensures Elements == old(Elements) + [element]
+  // {
+  //   if (count == a.Length) {
+  //     /*
+  //       Size limit reached, create a bigger array and transfer the elements.
+  //     */
+  //     var newA := new int[a.Length + 10];
+  //     var i := 0;
+  //     while (i < a.Length)
+  //       decreases a.Length - i
+  //       invariant 0 <= i <= a.Length < newA.Length
+  //       invariant forall j :: (0 <= j < i) ==> (a[(j + startIndex) % a.Length] == newA[j])
+  //     {
+  //       newA[i] := a[(i + startIndex) % a.Length];
+  //       i := i + 1;
+  //     }
+  //     /*
+  //       Update the fields.
+  //     */
+  //     a := newA;
+  //     startIndex := 0;
+  //     currentIndex := count;
+  //   }
+  //   /*
+  //     Go back to the beginning of the array if the end is reached.
+  //   */
+  //   if (currentIndex >= a.Length) {
+  //     currentIndex := 0;
+  //   }
+  //   /*
+  //     Add the element to the array.
+  //   */
+  //   a[currentIndex] := element;
+  //   currentIndex := currentIndex + 1;
+  //   count := count + 1;
+
+  //   /*
+  //     Go back to the beginning of the array if the end is reached.
+  //   */
+  //   if (currentIndex >= a.Length) {
+  //     currentIndex := 0;
+  //   }
+
+  //   /*
+  //     Update the abstraction.
+  //   */
+  //    Elements := Elements + [element];
+  // }
+
   /*
     Contains method.
   */
+
+  // wip- não apagar
   method Contains(key: int) returns (index: int)
     ensures 0 <= index ==> index < a.Length && a[index] == key
     ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key
@@ -123,25 +177,27 @@ class {:autocontracts} CircularArray {
     index := -1;
   }
 
-  // method ContainsValid(key: int) returns (index: int)
-  //   ensures Valid()
-  //   ensures 0 <= index ==> index < a.Length && a[index] == key &&  forall i :: 0 <= i < count ==> Elements[i] == key
-  //   ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key && forall i :: 0 <= i < count ==> Elements[i] != key
-  // {
-  //   index := 0;
-  //   while index < a.Length 
-  //     invariant 0 <= index < a.Length
-  //     invariant forall k :: 0 <= k < index ==> a[k] != key
-  //     {
-  //     if a[index] == key { return; }
-  //     if index + 1 >= a.Length {
-  //       index := -1;
-  //       return;
-  //     }
-  //     index := index + 1;
-  //   }
-  //   index := -1;
-  // }
+// Esse aqui funciona e deve estar certo
+  method ContainsValid(key: int) returns (index: int)
+    requires Valid()
+    ensures Valid()
+    ensures 0 <= index ==> index < a.Length && a[index] == key 
+    ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key 
+  {
+    index := 0;
+    while index < a.Length 
+      invariant 0 <= index < a.Length
+      invariant forall k :: 0 <= k < index ==> a[k] != key
+      {
+      if a[index] == key { return; }
+      if index + 1 >= a.Length {
+        index := -1;
+        return;
+      }
+      index := index + 1;
+    }
+    index := -1;
+  }
 
   // method Contains(element: int) returns (r: bool)
   //   requires Valid()
