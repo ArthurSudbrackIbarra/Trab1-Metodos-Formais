@@ -153,6 +153,30 @@ class {:autocontracts} CircularArray {
   //    Elements := Elements + [element];
   // }
 
+   method Dequeue() returns (value: int)
+    requires Valid()
+    ensures Valid()
+    ensures 0 == old(count) ==> count == 0 && value == 0 
+    ensures 0 < old(count) ==> count == old(count) - 1 && value == a[startIndex]
+  {
+    if count <= 0 { 
+      value := 0;
+      return; 
+    }
+    value := a[startIndex];
+    count := count - 1;
+    if startIndex + 1 < a.Length {
+      startIndex := startIndex + 1;
+    } else {
+      startIndex := 0;
+    }
+     if count > 0 { 
+       Elements := Elements[1..];
+       assert count == |Elements|;
+        return; 
+      }
+    Elements := [];
+  }
   /*
     Contains method.
   */
