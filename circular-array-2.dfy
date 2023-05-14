@@ -153,30 +153,30 @@ class {:autocontracts} CircularArray {
   //    Elements := Elements + [element];
   // }
 
-   method Dequeue() returns (value: int)
-    requires Valid()
-    ensures Valid()
-    ensures 0 == old(count) ==> count == 0 && value == 0 
-    ensures 0 < old(count) ==> count == old(count) - 1 && value == a[startIndex]
-  {
-    if count <= 0 { 
-      value := 0;
-      return; 
-    }
-    value := a[startIndex];
-    count := count - 1;
-    if startIndex + 1 < a.Length {
-      startIndex := startIndex + 1;
-    } else {
-      startIndex := 0;
-    }
-     if count > 0 { 
-       Elements := Elements[1..];
-       assert count == |Elements|;
-        return; 
-      }
-    Elements := [];
-  }
+  //  method Dequeue() returns (value: int)
+  //   requires Valid()
+  //   ensures Valid()
+  //   ensures 0 == old(count) ==> count == 0 && value == 0 
+  //   ensures 0 < old(count) ==> count == old(count) - 1 && value == a[startIndex]
+  // {
+  //   if count <= 0 { 
+  //     value := 0;
+  //     return; 
+  //   }
+  //   value := a[startIndex];
+  //   count := count - 1;
+  //   if startIndex + 1 < a.Length {
+  //     startIndex := startIndex + 1;
+  //   } else {
+  //     startIndex := 0;
+  //   }
+  //    if count > 0 { 
+  //      Elements := Elements[1..];
+  //      assert count == |Elements|;
+  //       return; 
+  //     }
+  //   Elements := [];
+  // }
   /*
     Contains method.
   */
@@ -201,19 +201,21 @@ class {:autocontracts} CircularArray {
     index := -1;
   }
 
-// Esse aqui funciona e deve estar certo
+  // Esse aqui funciona e deve estar certo.
   method ContainsValid(key: int) returns (index: int)
     requires Valid()
     ensures Valid()
     ensures 0 <= index ==> index < a.Length && a[index] == key 
-    ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key 
+    ensures index < 0 ==> forall k :: 0 <= k < a.Length ==> a[k] != key
   {
     index := 0;
     while index < a.Length 
       invariant 0 <= index < a.Length
       invariant forall k :: 0 <= k < index ==> a[k] != key
       {
-      if a[index] == key { return; }
+      if a[index] == key {
+        return;
+      }
       if index + 1 >= a.Length {
         index := -1;
         return;
@@ -221,6 +223,26 @@ class {:autocontracts} CircularArray {
       index := index + 1;
     }
     index := -1;
+  }
+
+  method ContainsAlternative(element: int) returns (r: bool)
+    requires Valid()
+    ensures Valid()
+    ensures exists i :: 0 <= i < a.Length && a[i] == element <==> r == true
+    ensures forall i :: 0 <= i < a.Length ==> a[i] != element <==> r == false
+  {
+    var i := 0;
+    while (i < a.Length)
+      decreases a.Length - i
+      invariant 0 <= i <= a.Length
+      invariant forall j :: 0 <= j < i ==> a[j] != element <==> r == false
+      invariant exists j :: 0 <= j < i && a[j] == element <==> r == true
+    {
+      if (a[i] == element) {
+        r := true;
+      }
+      i := i + 1;
+    }
   }
 
   // method Contains(element: int) returns (r: bool)
@@ -276,4 +298,15 @@ class {:autocontracts} CircularArray {
   {
     count == 0
   }
+}
+
+/*
+  Main method.
+  Here the the CircularArray class is demonstrated.
+*/
+method Main()
+{
+  var q := new CircularArray.EmptyQueue();
+  var c := q.ContainsValid(80);
+  print c;
 }
