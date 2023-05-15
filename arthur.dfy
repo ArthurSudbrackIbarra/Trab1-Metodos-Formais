@@ -49,26 +49,6 @@ class {:autocontracts} CircularArray {
     requires Valid()
     ensures Valid()
     ensures Elements == old(Elements) + [e]
-  {
-    if (size == arr.Length) {
-      var newArr := new int[arr.Length + 10];
-      var i := 0;
-      while (i < size)
-        decreases size - i
-        invariant 0 <= i <= size < newArr.Length
-        invariant newArr.Length == arr.Length + 10
-        invariant forall j :: 0 <= j < i ==> newArr[j] == arr[(start + j) % arr.Length]
-      {
-        newArr[i] := arr[(start + i) % arr.Length];
-        i := i + 1;
-      }
-      arr := newArr;
-      start := 0;
-    }
-    arr[(start + size) % arr.Length] := e;
-    size := size + 1;
-    Elements := Elements + [e];
-  }
 
   /*
     Dequeue method.
@@ -128,6 +108,28 @@ class {:autocontracts} CircularArray {
     ensures Valid()
     ensures q2.Valid()
     ensures q2.Elements == Elements + q1.Elements
+    ensures fresh(q2)
+  {
+    q2 := new CircularArray.EmptyQueue();
+    var i := 0;
+    while i < size
+      decreases size - i
+      invariant 0 <= i <= size == |Elements|
+      invariant q2.Elements == Elements[..i]
+    {
+      q2.Enqueue(arr[(start + i) % arr.Length]);
+      i := i + 1;
+    }
+    i := 0;
+    while i < q1.size
+      decreases q1.size - i
+      invariant 0 <= i <= q1.size == |q1.Elements|
+      invariant q2.Elements == Elements + q1.Elements[..i]
+    {
+      q2.Enqueue(q1.arr[(q1.start + i) % q1.arr.Length]);
+      i := i + 1;
+    }
+  }
     
 }
 
