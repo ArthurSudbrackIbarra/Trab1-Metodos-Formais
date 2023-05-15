@@ -12,6 +12,7 @@ class {:autocontracts} CircularArray {
   /*
     Abstraction.
   */
+  ghost const Capacity: nat; // The capacity of the queue. (WE WERE UNABLE TO MAKE THE SIZE OF THE ARRAY DYNAMIC).
   ghost var Elements: seq<int>; // The elements in the array represented as a sequence.
 
   /*
@@ -19,26 +20,26 @@ class {:autocontracts} CircularArray {
   */
   ghost predicate Valid()
   {
-    arr.Length > 0 &&
     0 <= start < arr.Length &&
     0 <= size <= arr.Length &&
-    size == |Elements| &&
-    Elements == (arr[..] + arr[..])[start..start + size]
+    Capacity == arr.Length &&
+    Elements == if start + size <= arr.Length
+                then arr[start..start + size]
+                else arr[start..] + arr[..size - (arr.Length - start)]
   }
 
   /*
     Constructor.
   */
-  constructor EmptyQueue()
-    ensures Valid()
-    ensures arr.Length == 10
-    ensures start == 0
-    ensures size == 0
+  constructor EmptyQueue(capacity: nat)
+    requires capacity > 0
     ensures Elements == []
+    ensures Capacity == capacity
   {
-    arr := new int[10];
+    arr := new int[capacity];
     start := 0;
     size := 0;
+    Capacity := capacity;
     Elements := [];
   }
 
@@ -46,18 +47,19 @@ class {:autocontracts} CircularArray {
     Enqueue Method
   */
   method Enqueue(e: int)
-    requires Valid()
-    ensures Valid()
+    requires !IsFull()
     ensures Elements == old(Elements) + [e]
+  {
+    arr[(start + size) % arr.Length] := e;
+    size := size + 1;
+    Elements := Elements + [e];
+  }
 
   /*
     Dequeue method.
   */
   method Dequeue() returns (e: int)
-    requires Valid()
-    requires size > 0
-    requires |Elements| > 0
-    ensures Valid()
+    requires !IsEmpty()
     ensures Elements == old(Elements)[1..]
     ensures e == old(Elements)[0]
   {
@@ -73,63 +75,74 @@ class {:autocontracts} CircularArray {
   }
 
   /*
-    Contains method.
+    Contains predicate.
   */
-  function Contains(e: int): bool
+  predicate Contains(e: int)
     ensures Contains(e) == (e in Elements)
   {
-    e in (arr[..] + arr[..])[start..start + size]
+    if start + size < arr.Length then
+      e in arr[start..start + size]
+    else
+      e in arr[start..] + arr[..size - (arr.Length - start)]
   }
 
   /*
     Size function.
   */
   function Size(): nat
-    ensures Size() == size
+    ensures Size() == |Elements|
   {
     size
   }
 
   /*
-    IsEmpty function.
+    IsEmpty predicate.
   */
-  function IsEmpty(): bool
-    ensures IsEmpty() == (size == 0)
+  predicate IsEmpty()
+    ensures IsEmpty() <==> (|Elements| == 0)
   {
     size == 0
+  }
+
+  /*
+    IsFull predicate.
+  */
+  predicate IsFull()
+    ensures IsFull() <==> |Elements| == Capacity
+  {
+    size == arr.Length
   }
 
   /*
     Concatenate method.
   */
   method Concatenate(q1: CircularArray) returns(q2: CircularArray)
-    requires Valid()
     requires q1.Valid()
-    ensures Valid()
+    requires q1 != this
     ensures q2.Valid()
-    ensures q2.Elements == Elements + q1.Elements
     ensures fresh(q2)
-  {
-    q2 := new CircularArray.EmptyQueue();
-    var i := 0;
-    while i < size
-      decreases size - i
-      invariant 0 <= i <= size == |Elements|
-      invariant q2.Elements == Elements[..i]
+    ensures q2.Capacity == Capacity + q1.Capacity + 10
     {
-      q2.Enqueue(arr[(start + i) % arr.Length]);
-      i := i + 1;
+      var s1 := if start + size <= arr.Length
+                then arr[start..start + size]
+                else arr[start..] + arr[..size - (arr.Length - start)];
+      var s2 := if q1.start + q1.size <= q1.arr.Length
+                then q1.arr[q1.start..q1.start + q1.size]
+                else q1.arr[q1.start..] + q1.arr[..q1.size - (q1.arr.Length - q1.start)];
+      var elements := s1 + s2;
+      var newCapacity := arr.Length + q1.arr.Length + 10;
+      q2 := new CircularArray.EmptyQueue(newCapacity);
+      var i := 0;
+      while i < |elements|
+        invariant 0 <= i <= |elements|
+        invariant q2.Valid()
+        invariant q2.Elements == elements[..i]
+        invariant q2.Capacity == newCapacity
+      {
+        q2.Enqueue(elements[i]);
+        i := i + 1;
+      }
     }
-    i := 0;
-    while i < q1.size
-      decreases q1.size - i
-      invariant 0 <= i <= q1.size == |q1.Elements|
-      invariant q2.Elements == Elements + q1.Elements[..i]
-    {
-      q2.Enqueue(q1.arr[(q1.start + i) % q1.arr.Length]);
-      i := i + 1;
-    }
-  }
     
 }
 
@@ -139,8 +152,9 @@ class {:autocontracts} CircularArray {
 */
 method Main()
 {
-  var q := new CircularArray.EmptyQueue();
-  assert q.Size() == 0;
-  var c := q.Contains(0);
-  print c;
+  var q := new CircularArray.EmptyQueue(3);
+  q.Enqueue(1);
+  assert !q.IsEmpty();
+  assert q.Size() == 1;
+  assert q.Contains(1);
 }

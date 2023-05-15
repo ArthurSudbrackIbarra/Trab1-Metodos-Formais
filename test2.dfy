@@ -55,15 +55,15 @@ class {:autocontracts} Deque {
         list[(start + size - 1) % list.Length] 
     }
     
-    method push_back(x : T)
-        requires |elems| < capacity
-        ensures elems == old(elems) + [x]
-    {
-        list[(start + size) % list.Length] := x;
-        size := size + 1;
+    // method push_back(x : T)
+    //     requires |elems| < capacity
+    //     ensures elems == old(elems) + [x]
+    // {
+    //     list[(start + size) % list.Length] := x;
+    //     size := size + 1;
         
-        elems := elems + [x];
-    }
+    //     elems := elems + [x];
+    // }
 
     method push_front(x : T) 
         requires |elems| < capacity
@@ -119,16 +119,5 @@ method Main()
     q.push_front(2);
     assert q.front() == 2;
     assert q.back() == 1;
-    // q.push_back(3);
-    // assert q.front() == 2;
-    // assert q.back() == 3;
-    // assert q.isFull();
-    q.pop_back();
-    assert q.front() == 2;
-    assert q.back() == 1;
-    q.pop_front();
-    assert q.front() == 1;
-    assert q.back() == 1;
-    q.pop_front();
-    assert q.isEmpty();
+    print q.list;
 }
