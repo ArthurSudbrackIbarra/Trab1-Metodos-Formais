@@ -114,36 +114,39 @@ class {:autocontracts} CircularArray {
   }
 
   /*
+    AsSequence method.
+    (Auxiliary method for the Concatenate method)
+  */
+  method AsSequence() returns (s: seq<int>)
+    ensures s == Elements
+    {
+      s := if start + size <= arr.Length
+           then arr[start..start + size]
+           else arr[start..] + arr[..size - (arr.Length - start)];
+    }
+
+  /*
     Concatenate method.
   */
-  // method Concatenate(q1: CircularArray) returns(q2: CircularArray)
-  //   requires q1.Valid()
-  //   requires q1 != this
-  //   ensures q2.Valid()
-  //   ensures fresh(q2)
-  //   ensures q2.Capacity == Capacity + q1.Capacity + 10
-  //   {
-  //     var s1 := if start + size <= arr.Length
-  //               then arr[start..start + size]
-  //               else arr[start..] + arr[..size - (arr.Length - start)];
-  //     var s2 := if q1.start + q1.size <= q1.arr.Length
-  //               then q1.arr[q1.start..q1.start + q1.size]
-  //               else q1.arr[q1.start..] + q1.arr[..q1.size - (q1.arr.Length - q1.start)];
-  //     var elements := s1 + s2;
-  //     var newCapacity := arr.Length + q1.arr.Length + 10;
-  //     q2 := new CircularArray.EmptyQueue(newCapacity);
-  //     var i := 0;
-  //     while i < |elements|
-  //       invariant 0 <= i <= |elements|
-  //       invariant q2.Valid()
-  //       invariant q2.Elements == elements[..i]
-  //       invariant q2.Capacity == newCapacity
-  //     {
-  //       q2.Enqueue(elements[i]);
-  //       i := i + 1;
-  //     }
-  //   }
-    
+  method Concatenate(q1: CircularArray) returns(q2: CircularArray)
+    requires q1.Valid()
+    requires q1 != this
+    //ensures q2.Valid()
+    ensures fresh(q2)
+    ensures q2.Capacity == Capacity + q1.Capacity
+    ensures q2.Elements == Elements + q1.Elements
+  {
+    q2 := new CircularArray.EmptyQueue(arr.Length + q1.arr.Length);
+    var s1 := AsSequence();
+    var s2 := q1.AsSequence();
+    var both := s1 + s2;
+    forall i | 0 <= i < size
+    {
+      q2.arr[i] := both[i];
+    }
+    q2.size := size + q1.size;
+    q2.Elements := Elements + q1.Elements;
+  }
 }
 
 /*
@@ -185,4 +188,15 @@ method Main()
 
   assert q.IsEmpty(); // The queue must now be empty.
   assert q.Size() == 0; // The queue must now have size 0.
+
+  // Tests.
+  var q1 := new CircularArray.EmptyQueue(10);
+  q1.Enqueue(1);
+  q1.Enqueue(2);
+  var q2 := new CircularArray.EmptyQueue(10);
+  q2.Enqueue(3);
+  q2.Enqueue(4);
+  var q3 := q1.Concatenate(q2);
+  var s3 := q3.AsSequence();
+  print s3;
 }
