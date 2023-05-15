@@ -55,25 +55,16 @@ class {:autocontracts} Deque {
         list[(start + size - 1) % list.Length] 
     }
     
-    // method push_back(x : T)
-    //     requires |elems| < capacity
-    //     ensures elems == old(elems) + [x]
-    // {
-    //     list[(start + size) % list.Length] := x;
-    //     size := size + 1;
-        
-    //     elems := elems + [x];
-    // }
- 
-    method pop_back()
-    requires |elems| > 0
-    ensures elems == old(elems[.. (|elems| - 1)])
+    method push_back(x : T)
+        requires |elems| < capacity
+        ensures elems == old(elems) + [x]
     {
-        size := size - 1;
-
-        elems := elems[.. |elems| - 1];
+        list[(start + size) % list.Length] := x;
+        size := size + 1;
+        
+        elems := elems + [x];
     }
- 
+
     method push_front(x : T) 
         requires |elems| < capacity
         ensures elems == [x] + old(elems)
@@ -89,6 +80,17 @@ class {:autocontracts} Deque {
 
         elems := [x] + elems;
     }    
+ 
+    method pop_back()
+    requires |elems| > 0
+    ensures elems == old(elems[.. (|elems| - 1)])
+    {
+        size := size - 1;
+
+        elems := elems[.. |elems| - 1];
+    }
+ 
+    
  
     method pop_front()
         requires |elems| > 0

@@ -19,9 +19,11 @@ class {:autocontracts} CircularArray {
   */
   ghost predicate Valid()
   {
+    arr.Length > 0 &&
     0 <= start < arr.Length &&
     0 <= size <= arr.Length &&
-    Elements == (arr[..] + arr[..])[start..start + size] // Double the array and take the slice.
+    size == |Elements| &&
+    Elements == (arr[..] + arr[..])[start..start + size]
   }
 
   /*
@@ -41,6 +43,34 @@ class {:autocontracts} CircularArray {
   }
 
   /*
+    Enqueue Method
+  */
+  method Enqueue(e: int)
+    requires Valid()
+    ensures Valid()
+    ensures Elements == old(Elements) + [e]
+  {
+    if (size == arr.Length) {
+      var newArr := new int[arr.Length + 10];
+      var i := 0;
+      while (i < size)
+        decreases size - i
+        invariant 0 <= i <= size < newArr.Length
+        invariant newArr.Length == arr.Length + 10
+        invariant forall j :: 0 <= j < i ==> newArr[j] == arr[(start + j) % arr.Length]
+      {
+        newArr[i] := arr[(start + i) % arr.Length];
+        i := i + 1;
+      }
+      arr := newArr;
+      start := 0;
+    }
+    arr[(start + size) % arr.Length] := e;
+    size := size + 1;
+    Elements := Elements + [e];
+  }
+
+  /*
     Dequeue method.
   */
   method Dequeue() returns (e: int)
@@ -52,7 +82,12 @@ class {:autocontracts} CircularArray {
     ensures e == old(Elements)[0]
   {
     e := arr[start];
-    start := (start + 1) % arr.Length;
+    if start + 1 < arr.Length {
+      start := start + 1;
+    }
+    else {
+      start := 0;
+    }
     size := size - 1;
     Elements := Elements[1..];
   }
@@ -83,6 +118,17 @@ class {:autocontracts} CircularArray {
   {
     size == 0
   }
+
+  /*
+    Concatenate method.
+  */
+  method Concatenate(q1: CircularArray) returns(q2: CircularArray)
+    requires Valid()
+    requires q1.Valid()
+    ensures Valid()
+    ensures q2.Valid()
+    ensures q2.Elements == Elements + q1.Elements
+    
 }
 
 /*
