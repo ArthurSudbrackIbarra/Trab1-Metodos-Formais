@@ -1,5 +1,12 @@
 /*
   Class CircularArray.
+
+  Names:
+  Arthur Sudbrack Ibarra,
+  Miguel Torres de Castro,
+  Felipe Grosze Nipper,
+  Willian Magnum Albeche,
+  Luiz Eduardo Mello dos Reis.
 */
 class {:autocontracts} CircularArray {
   /*
