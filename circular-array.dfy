@@ -114,6 +114,17 @@ class {:autocontracts} CircularArray {
   }
 
   /*
+    GetAt method.
+    (Not requested in the assignment, but useful).
+  */
+  method GetAt(i: nat) returns (e: int)
+    requires i < size
+    ensures e == Elements[i]
+  {
+    e := arr[(start + i) % arr.Length];
+  }
+
+  /*
     AsSequence method.
     (Auxiliary method for the Concatenate method)
   */
@@ -131,7 +142,6 @@ class {:autocontracts} CircularArray {
   method Concatenate(q1: CircularArray) returns(q2: CircularArray)
     requires q1.Valid()
     requires q1 != this
-    //ensures q2.Valid()
     ensures fresh(q2)
     ensures q2.Capacity == Capacity + q1.Capacity
     ensures q2.Elements == Elements + q1.Elements
@@ -145,7 +155,11 @@ class {:autocontracts} CircularArray {
       q2.arr[i] := both[i];
     }
     q2.size := size + q1.size;
+    q2.start := 0;
     q2.Elements := Elements + q1.Elements;
+    
+    print q2.arr.Length;
+    print q2.size;
   }
 }
 
@@ -162,10 +176,14 @@ method Main()
   assert !q.IsEmpty(); // The queue must now not be empty.
   assert q.Size() == 1; // The queue must have size 1 after the enqueue.
   assert q.Contains(1); // The queue must contain the element 1.
+  var e1 := q.GetAt(0); // Get the element at index 0.
+  assert e1 == 1; // The element at index 0 must be 1.
 
   q.Enqueue(2); // Enqueue the element 2.
   assert q.Size() == 2; // The queue must have size 2 after the enqueue.
   assert q.Contains(2); // The queue must contain the element 2.
+  var e2 := q.GetAt(1); // Get the element at index 1.
+  assert e2 == 2; // The element at index 1 must be 2.
 
   var e := q.Dequeue(); // Dequeue the element 1.
   assert e == 1; // The dequeued element must be 1.
@@ -188,15 +206,4 @@ method Main()
 
   assert q.IsEmpty(); // The queue must now be empty.
   assert q.Size() == 0; // The queue must now have size 0.
-
-  // Tests.
-  var q1 := new CircularArray.EmptyQueue(10);
-  q1.Enqueue(1);
-  q1.Enqueue(2);
-  var q2 := new CircularArray.EmptyQueue(10);
-  q2.Enqueue(3);
-  q2.Enqueue(4);
-  var q3 := q1.Concatenate(q2);
-  var s3 := q3.AsSequence();
-  print s3;
 }
