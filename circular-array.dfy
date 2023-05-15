@@ -2,117 +2,187 @@
   Class CircularArray.
 */
 class {:autocontracts} CircularArray {
-
   /*
-    Implementation.
+    Implementation
   */
-  var arr: array<int>;
-  var startIndex: nat;
-  var nextIndex: nat;
-  var elementsCount: nat;
+  var arr: array<int>; // The array.
+  var start: nat; // The index of the first element.
+  var size: nat; // The number of elements in the queue.
 
   /*
     Abstraction.
   */
-  ghost var Content: seq<int>;
+  ghost const Capacity: nat; // The capacity of the queue. (WE WERE UNABLE TO MAKE THE SIZE OF THE ARRAY DYNAMIC).
+  ghost var Elements: seq<int>; // The elements in the array represented as a sequence.
 
   /*
     Class invariant.
   */
   ghost predicate Valid()
   {
-    0 <= this.startIndex <= this.arr.Length &&
-    0 <= this.nextIndex <= this.arr.Length &&
-    this.elementsCount <= this.arr.Length &&
-    this.elementsCount == |this.Content| &&
-    this.elementsCount == 0 ==> this.Content == [] &&
-    (this.startIndex < this.nextIndex && this.elementsCount > 0 ==> this.Content == this.arr[this.startIndex..this.nextIndex]) &&
-    (this.startIndex >= this.nextIndex && this.elementsCount > 0 ==> this.Content == this.arr[this.startIndex..this.arr.Length] + this.arr[0..this.nextIndex])
+    0 <= start < arr.Length &&
+    0 <= size <= arr.Length &&
+    Capacity == arr.Length &&
+    Elements == if start + size <= arr.Length
+                then arr[start..start + size]
+                else arr[start..] + arr[..size - (arr.Length - start)]
   }
 
   /*
     Constructor.
   */
-  constructor WithInitialCapacity(initialCapacity: nat)
-    requires initialCapacity > 0
-    ensures Valid()
-    ensures this.arr.Length == initialCapacity
-    ensures this.startIndex == 0
-    ensures this.nextIndex == 0
-    ensures this.elementsCount == 0
-    ensures this.Content == []
+  constructor EmptyQueue(capacity: nat)
+    requires capacity > 0
+    ensures Elements == []
+    ensures Capacity == capacity
   {
-    this.arr := new int[initialCapacity];
-    this.startIndex := 0;
-    this.nextIndex := 0;
-    this.elementsCount := 0;
-    this.Content := [];
+    arr := new int[capacity];
+    start := 0;
+    size := 0;
+    Capacity := capacity;
+    Elements := [];
   }
 
   /*
-    Methods.
+    Enqueue Method
   */
-
-  /*
-    Enqueue
-  */
-  method Enqueue(element: int)
-    requires Valid()
-    ensures Valid()
+  method Enqueue(e: int)
+    requires !IsFull()
+    ensures Elements == old(Elements) + [e]
   {
-    /*
-      If the array is full, then we need to create a new array with a larger
-      capacity and copy the elements from the old array to the new array.
-    */
-    if (this.elementsCount == this.arr.Length)
-    {
-      var newArr := new int[this.arr.Length + 10];
-      var i := 0;
-      var j := this.startIndex;
-      while (i < this.arr.Length)
-        decreases this.arr.Length - i
-        invariant 0 <= i <= this.arr.Length <= newArr.Length
-      {
-        newArr[i] := arr[j % arr.Length];
-        i := i + 1;
-        j := j + 1;
-      }
-      this.startIndex := 0;
-      this.nextIndex := i;
-      this.arr := newArr;
-    }
-    /*
-      If the next index is equal to the length of the array, then we need to
-      reset it to 0.
-    */
-    if (nextIndex >= arr.Length)
-    {
-      this.nextIndex := 0;
-    }
-    /*
-      Add the element to the array.
-    */
-    this.arr[this.nextIndex] := element;
-    /*
-      Update variables.
-    */
-    this.nextIndex := nextIndex + 1;
-    this.elementsCount := elementsCount + 1;
-    if (startIndex < nextIndex)
-    {
-      this.Content := arr[startIndex..nextIndex];
-    } else
-    {
-      this.Content := arr[startIndex..arr.Length] + arr[0..nextIndex];
-    }
+    arr[(start + size) % arr.Length] := e;
+    size := size + 1;
+    Elements := Elements + [e];
   }
 
+  /*
+    Dequeue method.
+  */
+  method Dequeue() returns (e: int)
+    requires !IsEmpty()
+    ensures Elements == old(Elements)[1..]
+    ensures e == old(Elements)[0]
+  {
+    e := arr[start];
+    if start + 1 < arr.Length {
+      start := start + 1;
+    }
+    else {
+      start := 0;
+    }
+    size := size - 1;
+    Elements := Elements[1..];
+  }
+
+  /*
+    Contains predicate.
+  */
+  predicate Contains(e: int)
+    ensures Contains(e) == (e in Elements)
+  {
+    if start + size < arr.Length then
+      e in arr[start..start + size]
+    else
+      e in arr[start..] + arr[..size - (arr.Length - start)]
+  }
+
+  /*
+    Size function.
+  */
+  function Size(): nat
+    ensures Size() == |Elements|
+  {
+    size
+  }
+
+  /*
+    IsEmpty predicate.
+  */
+  predicate IsEmpty()
+    ensures IsEmpty() <==> (|Elements| == 0)
+  {
+    size == 0
+  }
+
+  /*
+    IsFull predicate.
+  */
+  predicate IsFull()
+    ensures IsFull() <==> |Elements| == Capacity
+  {
+    size == arr.Length
+  }
+
+  /*
+    Concatenate method.
+  */
+  // method Concatenate(q1: CircularArray) returns(q2: CircularArray)
+  //   requires q1.Valid()
+  //   requires q1 != this
+  //   ensures q2.Valid()
+  //   ensures fresh(q2)
+  //   ensures q2.Capacity == Capacity + q1.Capacity + 10
+  //   {
+  //     var s1 := if start + size <= arr.Length
+  //               then arr[start..start + size]
+  //               else arr[start..] + arr[..size - (arr.Length - start)];
+  //     var s2 := if q1.start + q1.size <= q1.arr.Length
+  //               then q1.arr[q1.start..q1.start + q1.size]
+  //               else q1.arr[q1.start..] + q1.arr[..q1.size - (q1.arr.Length - q1.start)];
+  //     var elements := s1 + s2;
+  //     var newCapacity := arr.Length + q1.arr.Length + 10;
+  //     q2 := new CircularArray.EmptyQueue(newCapacity);
+  //     var i := 0;
+  //     while i < |elements|
+  //       invariant 0 <= i <= |elements|
+  //       invariant q2.Valid()
+  //       invariant q2.Elements == elements[..i]
+  //       invariant q2.Capacity == newCapacity
+  //     {
+  //       q2.Enqueue(elements[i]);
+  //       i := i + 1;
+  //     }
+  //   }
+    
 }
 
+/*
+  Main method.
+  Here the the CircularArray class is demonstrated.
+*/
 method Main()
 {
-  var queue := new CircularArray.WithInitialCapacity(5);
-  //queue.Enqueue(1);
-  //queue.Enqueue(2);
-  print queue.arr;
+  var q := new CircularArray.EmptyQueue(10); // Create a new queue.
+  assert q.IsEmpty(); // The queue must be empty.
+
+  q.Enqueue(1); // Enqueue the element 1.
+  assert !q.IsEmpty(); // The queue must now not be empty.
+  assert q.Size() == 1; // The queue must have size 1 after the enqueue.
+  assert q.Contains(1); // The queue must contain the element 1.
+
+  q.Enqueue(2); // Enqueue the element 2.
+  assert q.Size() == 2; // The queue must have size 2 after the enqueue.
+  assert q.Contains(2); // The queue must contain the element 2.
+
+  var e := q.Dequeue(); // Dequeue the element 1.
+  assert e == 1; // The dequeued element must be 1.
+  assert q.Size() == 1; // The queue must have size 1 after the dequeue.
+  assert !q.Contains(1); // The queue must NOT contain the element 1 anymore.
+
+  q.Enqueue(3); // Enqueue the element 3.
+  assert q.Size() == 2; // The queue must have size 2 after the enqueue.
+  assert q.Contains(3); // The queue must contain the element 3.
+
+  e := q.Dequeue(); // Dequeue the element 2.
+  assert e == 2; // The dequeued element must be 2.
+  assert q.Size() == 1; // The queue must have size 1 after the dequeue.
+  assert !q.Contains(2); // The queue must NOT contain the element 2 anymore.
+
+  e := q.Dequeue(); // Dequeue the element 3.
+  assert e == 3; // The dequeued element must be 3.
+  assert q.Size() == 0; // The queue must have size 0 after the dequeue.
+  assert !q.Contains(3); // The queue must NOT contain the element 3 anymore.
+
+  assert q.IsEmpty(); // The queue must now be empty.
+  assert q.Size() == 0; // The queue must now have size 0.
 }
